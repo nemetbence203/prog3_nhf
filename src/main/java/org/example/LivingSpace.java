@@ -10,8 +10,10 @@ public class LivingSpace implements Serializable {
     //Játékszabály Born - Survive formátumban
     private List<Integer> born;
     private List<Integer> survive;
+    private int size;
 
     public LivingSpace(int size) {
+        this.size = size;
         cells = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             ArrayList<Cell> row = new ArrayList<>();
@@ -35,8 +37,8 @@ public class LivingSpace implements Serializable {
         ArrayList<ArrayList<Cell>> nextCells = getCells();
 
         // Minden cella frissítése az új élettérben
-        for (int i = 0; i < cells.size(); i++) {
-            for (int j = 0; j < cells.get(i).size(); j++) {
+        for (int i = 1; i < cells.size()-1; i++) {
+            for (int j = 1; j < cells.get(i).size()-1; j++) {
                 int aliveNeighbors = livingNeighbours(i, j);
                 Cell currentCell = cells.get(i).get(j);
                 Cell nextCell = nextCells.get(i).get(j);
@@ -93,8 +95,8 @@ public class LivingSpace implements Serializable {
         return count;
     }
 
-    public boolean getAt(int x, int y) {
-        return cells.get(x).get(y).isAlive();
+    public Cell getAt(int x, int y) {
+        return cells.get(x).get(y);
     }
     public void killAt(int x, int y) {
         cells.get(x).get(y).kill();
@@ -108,5 +110,9 @@ public class LivingSpace implements Serializable {
                 cell.kill();
             }
         }
+    }
+
+    public int getSize() {
+        return size;
     }
 }

@@ -12,6 +12,9 @@ public class Cell implements Serializable{
     public boolean isAlive() {
         return isalive;
     }
+    public void flip(){
+        isalive = !isalive;
+    }
     public void kill(){
         isalive = false;
     }

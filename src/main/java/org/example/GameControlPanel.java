@@ -6,23 +6,43 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.border.LineBorder;
 
 public class GameControlPanel extends JPanel {
     private JSlider speedSlider;
     private JCheckBox fadeEffectCheckbox;
     private JTextField bornField, surviveField;
-    private JButton startButton, stopButton;
+    private JButton startButton, stopButton, clearButton, colorPickerLiving, colorPickerDead;
     private LivingSpace livingSpace;
+    private JSpinner sizeSpinner;
+    private Color livingColor = Color.blue, deadColor = Color.white;
+    private GameAreaPanel gameAreaPanel;
+    private boolean running = false;
 
-    public GameControlPanel(LivingSpace livingSpace) {
+    public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel) {
         this.livingSpace = livingSpace;
+        this.gameAreaPanel = gameAreaPanel;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBorder(new LineBorder(Color.black, 1));
         setPreferredSize(new Dimension(250, 600)); // Panel szélessége és magassága
+
+        //0. Élettér mérete:
+        JPanel sizeSettingPanel = new JPanel();
+        sizeSettingPanel.setLayout(new GridLayout(1, 2));
+        sizeSettingPanel.setBorder(new LineBorder(Color.black, 1));
+        sizeSettingPanel.setPreferredSize(new Dimension(250, 20));
+        sizeSettingPanel.setMaximumSize(new Dimension(250, 20));
+        sizeSettingPanel.add(new JLabel("Size of Living Space:"));
+        sizeSpinner = new JSpinner(new SpinnerNumberModel(50,10,150,1));
+        sizeSettingPanel.add(sizeSpinner);
+        add(sizeSettingPanel);
 
         // 1. Játékszabályok
         JPanel rulesPanel = new JPanel();
+        rulesPanel.setBorder(new LineBorder(Color.black, 1));
         rulesPanel.setLayout(new GridLayout(2, 2)); // 2 sor, 2 oszlop
         rulesPanel.setPreferredSize(new Dimension(250, 40));
+        rulesPanel.setMaximumSize(new Dimension(250, 40));
         rulesPanel.add(new JLabel("Born rules (0-8):"));
         bornField = new JTextField("3");
         bornField.setPreferredSize(new Dimension(100, 20)); // Méret csökkentése egy sorra
@@ -35,7 +55,10 @@ public class GameControlPanel extends JPanel {
 
         // 2. Játék sebességét megadó slider
         JPanel speedPanel = new JPanel();
+        speedPanel.setBorder(new LineBorder(Color.black, 1));
         speedPanel.setLayout(new FlowLayout(FlowLayout.LEFT)); // Balra igazítás
+        speedPanel.setPreferredSize(new Dimension(250, 80));
+        speedPanel.setMaximumSize(new Dimension(250, 80));
         speedPanel.add(new JLabel("Game Speed:"));
         speedSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 5); // Sebesség 1-10 között, alapértelmezett 5
         speedSlider.setMajorTickSpacing(1);
@@ -46,16 +69,51 @@ public class GameControlPanel extends JPanel {
 
         // 3. Fade effekt checkbox
         JPanel fadePanel = new JPanel();
+        fadePanel.setPreferredSize(new Dimension(250, 40));
+        fadePanel.setMaximumSize(new Dimension(250, 40));
+        fadePanel.setBorder(new LineBorder(Color.black, 1));
         fadePanel.setLayout(new FlowLayout(FlowLayout.LEFT)); // Balra igazítás
         fadeEffectCheckbox = new JCheckBox("Enable fade effect");
         fadePanel.add(fadeEffectCheckbox);
         add(fadePanel);
 
-        // 4. Két gomb: játék indítása és megállítása
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout());
+        // 4. Colorpicker gombok
+        JPanel colorPanel = new JPanel();
+        colorPanel.setPreferredSize(new Dimension(250, 100));
+        colorPanel.setMaximumSize(new Dimension(250, 100));
+        colorPanel.setBorder(new LineBorder(Color.black, 1));
+        colorPanel.setLayout(new GridLayout(2,1));
+        colorPanel.add(new JLabel("Pick color of cells:"));
+        JPanel colorButtons = new JPanel();
+        colorButtons.setLayout(new GridLayout(1,2));
+        colorPickerLiving = new JButton("Living");
+        colorPickerLiving.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                livingColor = JColorChooser.showDialog(null, "Pick color of living cells", livingColor);
+            }
+        });
+        colorPickerDead = new JButton("Dead");
+        colorPickerDead.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deadColor = JColorChooser.showDialog(null, "Pick color of dead cells", deadColor);
+            }
+        });
+        colorButtons.add(colorPickerLiving);
+        colorButtons.add(colorPickerDead);
+        colorPanel.add(colorButtons);
+        add(colorPanel);
+
+        // 5. Két gomb: játék indítása és megállítása
+        JPanel startStopPanel = new JPanel();
+        startStopPanel.setPreferredSize(new Dimension(250, 50));
+        startStopPanel.setMaximumSize(new Dimension(250, 50));
+        startStopPanel.setBorder(new LineBorder(Color.black, 1));
+        startStopPanel.setLayout(new GridLayout(1,3));
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
+        clearButton = new JButton("Clear");
 
         startButton.addActionListener(new ActionListener() {
             @Override
@@ -71,9 +129,14 @@ public class GameControlPanel extends JPanel {
             }
         });
 
-        buttonPanel.add(startButton);
-        buttonPanel.add(stopButton);
-        add(buttonPanel);
+        startStopPanel.add(startButton);
+        startStopPanel.add(stopButton);
+        startStopPanel.add(clearButton);
+        add(startStopPanel);
+
+
+
+
     }
 
     // Játék indítása
@@ -84,27 +147,28 @@ public class GameControlPanel extends JPanel {
             List<Integer> surviveRules = parseRules(surviveField.getText());
             livingSpace.setBornRule(bornRules);
             livingSpace.setSurviveRule(surviveRules);
+            running = true;
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Invalid rules format!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Szabályok formátuma: számjegyek 0-tól 8-ig, vesszővel elválasztva!", "Hiba", JOptionPane.ERROR_MESSAGE);
+            running = false;
             return;
         }
 
         // Játék sebesség beállítása (pl. 1-10 közötti sebesség)
         int speed = speedSlider.getValue();
-        // A sebesség változtatásának logikáját implementálhatod itt (pl. szálak vagy időzítők kezelésével)
 
-        // Fade effekt engedélyezése
-        boolean fadeEffectEnabled = fadeEffectCheckbox.isSelected();
-        // Itt beállíthatod a `LivingSpace` objektumban, hogy aktiválódjon a fade effekt, ha szükséges
+        //boolean fadeEffectEnabled = fadeEffectCheckbox.isSelected();
+
 
         // Indíthatod a szimulációt itt
-        // livingSpace.startSimulation(speed, fadeEffectEnabled);
+
+
     }
+
 
     // Játék megállítása
     private void stopGame() {
         // Megállíthatod a szimulációt itt
-        // livingSpace.stopSimulation();
     }
 
     // Segédmetódus a szabályok parse-olásához
