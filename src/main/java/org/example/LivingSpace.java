@@ -37,17 +37,25 @@ public class LivingSpace implements Serializable {
         ArrayList<ArrayList<Cell>> nextCells = getCells();
 
         // Minden cella frissítése az új élettérben
-        for (int i = 1; i < cells.size()-1; i++) {
-            for (int j = 1; j < cells.get(i).size()-1; j++) {
-                int aliveNeighbors = livingNeighbours(i, j);
+        for (int i = 0; i < cells.size(); i++) {
+            for (int j = 0; j < cells.get(i).size(); j++) {
                 Cell currentCell = cells.get(i).get(j);
                 Cell nextCell = nextCells.get(i).get(j);
+                if(i == 0 || i == cells.size()-1 || j == 0 || j == cells.get(i).size()-1){
+                    nextCell.kill();
+                    continue;
+                }
+                int aliveNeighbors = livingNeighbours(i, j);
+
 
                 // Új állapot szabályok alapján
                 if (currentCell.isAlive() && !survive.contains(aliveNeighbors)) {
                     nextCell.kill();
                 } else if (!currentCell.isAlive() && born.contains(aliveNeighbors)) {
                     nextCell.setAlive();
+                }
+                if (!currentCell.isAlive()) {
+                    currentCell.increaseDeadSince();
                 }
             }
         }

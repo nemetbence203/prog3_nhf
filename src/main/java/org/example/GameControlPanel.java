@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.border.LineBorder;
 
-public class GameControlPanel extends JPanel {
+public class GameControlPanel extends JPanel implements Runnable {
     private JSlider speedSlider;
     private JCheckBox fadeEffectCheckbox;
     private JTextField bornField, surviveField;
@@ -32,7 +32,7 @@ public class GameControlPanel extends JPanel {
         sizeSettingPanel.setBorder(new LineBorder(Color.black, 1));
         sizeSettingPanel.setPreferredSize(new Dimension(250, 20));
         sizeSettingPanel.setMaximumSize(new Dimension(250, 20));
-        sizeSettingPanel.add(new JLabel("Size of Living Space:"));
+        sizeSettingPanel.add(new JLabel("Élettér mérete:"));
         sizeSpinner = new JSpinner(new SpinnerNumberModel(50,10,150,1));
         sizeSettingPanel.add(sizeSpinner);
         add(sizeSettingPanel);
@@ -40,16 +40,18 @@ public class GameControlPanel extends JPanel {
         // 1. Játékszabályok
         JPanel rulesPanel = new JPanel();
         rulesPanel.setBorder(new LineBorder(Color.black, 1));
-        rulesPanel.setLayout(new GridLayout(2, 2)); // 2 sor, 2 oszlop
+        rulesPanel.setLayout(new GridLayout(2, 2));
         rulesPanel.setPreferredSize(new Dimension(250, 40));
         rulesPanel.setMaximumSize(new Dimension(250, 40));
-        rulesPanel.add(new JLabel("Born rules (0-8):"));
+        rulesPanel.add(new JLabel("Születési szabály (0-8):"));
         bornField = new JTextField("3");
-        bornField.setPreferredSize(new Dimension(100, 20)); // Méret csökkentése egy sorra
+        bornField.setPreferredSize(new Dimension(80, 20));
+        bornField.setMaximumSize(new Dimension(80, 20));
         rulesPanel.add(bornField);
-        rulesPanel.add(new JLabel("Survive rules (0-8):"));
+        rulesPanel.add(new JLabel("Túlélési szabály (0-8):"));
         surviveField = new JTextField("2,3");
-        surviveField.setPreferredSize(new Dimension(100, 20)); // Méret csökkentése egy sorra
+        surviveField.setPreferredSize(new Dimension(80, 20));
+        surviveField.setMaximumSize(new Dimension(80, 20));
         rulesPanel.add(surviveField);
         add(rulesPanel);
 
@@ -59,7 +61,7 @@ public class GameControlPanel extends JPanel {
         speedPanel.setLayout(new FlowLayout(FlowLayout.LEFT)); // Balra igazítás
         speedPanel.setPreferredSize(new Dimension(250, 80));
         speedPanel.setMaximumSize(new Dimension(250, 80));
-        speedPanel.add(new JLabel("Game Speed:"));
+        speedPanel.add(new JLabel("Játék sebessége"));
         speedSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 5); // Sebesség 1-10 között, alapértelmezett 5
         speedSlider.setMajorTickSpacing(1);
         speedSlider.setPaintTicks(true);
@@ -73,7 +75,7 @@ public class GameControlPanel extends JPanel {
         fadePanel.setMaximumSize(new Dimension(250, 40));
         fadePanel.setBorder(new LineBorder(Color.black, 1));
         fadePanel.setLayout(new FlowLayout(FlowLayout.LEFT)); // Balra igazítás
-        fadeEffectCheckbox = new JCheckBox("Enable fade effect");
+        fadeEffectCheckbox = new JCheckBox("Halott cellák elhalványodása");
         fadePanel.add(fadeEffectCheckbox);
         add(fadePanel);
 
@@ -83,21 +85,25 @@ public class GameControlPanel extends JPanel {
         colorPanel.setMaximumSize(new Dimension(250, 100));
         colorPanel.setBorder(new LineBorder(Color.black, 1));
         colorPanel.setLayout(new GridLayout(2,1));
-        colorPanel.add(new JLabel("Pick color of cells:"));
+        colorPanel.add(new JLabel("Cellaszínek:"));
         JPanel colorButtons = new JPanel();
         colorButtons.setLayout(new GridLayout(1,2));
-        colorPickerLiving = new JButton("Living");
+        colorPickerLiving = new JButton("Élő");
         colorPickerLiving.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                livingColor = JColorChooser.showDialog(null, "Pick color of living cells", livingColor);
+                livingColor = JColorChooser.showDialog(null, "Válaszd ki az élő cellák színét!", livingColor);
+                gameAreaPanel.setColors(livingColor, deadColor);
+                gameAreaPanel.repaint();
             }
         });
-        colorPickerDead = new JButton("Dead");
+        colorPickerDead = new JButton("Halott");
         colorPickerDead.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                deadColor = JColorChooser.showDialog(null, "Pick color of dead cells", deadColor);
+                deadColor = JColorChooser.showDialog(null, "Válaszd ki a halott cellák színét!", deadColor);
+                gameAreaPanel.setColors(livingColor, deadColor);
+                gameAreaPanel.repaint();
             }
         });
         colorButtons.add(colorPickerLiving);
@@ -129,6 +135,14 @@ public class GameControlPanel extends JPanel {
             }
         });
 
+        clearButton.addActionListener(new ActionListener() {
+           @Override
+           public void actionPerformed(ActionEvent e) {
+               livingSpace.killAll();
+               gameAreaPanel.repaint();
+           }
+        });
+
         startStopPanel.add(startButton);
         startStopPanel.add(stopButton);
         startStopPanel.add(clearButton);
@@ -136,6 +150,11 @@ public class GameControlPanel extends JPanel {
 
 
 
+
+    }
+
+    @Override
+    public void run() {
 
     }
 
@@ -147,6 +166,9 @@ public class GameControlPanel extends JPanel {
             List<Integer> surviveRules = parseRules(surviveField.getText());
             livingSpace.setBornRule(bornRules);
             livingSpace.setSurviveRule(surviveRules);
+            livingSpace.nextState();
+            gameAreaPanel.setFadeOn(fadeEffectCheckbox.isSelected());
+            gameAreaPanel.repaint();
             running = true;
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Szabályok formátuma: számjegyek 0-tól 8-ig, vesszővel elválasztva!", "Hiba", JOptionPane.ERROR_MESSAGE);

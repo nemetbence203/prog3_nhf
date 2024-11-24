@@ -14,11 +14,23 @@ public class Cell implements Serializable{
     }
     public void flip(){
         isalive = !isalive;
+        if(!isalive){
+            deadSince = 1;
+        }
     }
     public void kill(){
         isalive = false;
+        deadSince = 1;
     }
+    public void increaseDeadSince(){
+        if(deadSince > 0) {
+            deadSince = Math.min(deadSince + 1, 5);
+        }
+    }
+
     public void setAlive() {
         isalive = true;
+        deadSince = 0;
     }
+    public int deadSince() { return deadSince; }
 }
