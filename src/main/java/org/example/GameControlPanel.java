@@ -218,7 +218,8 @@ public class GameControlPanel extends JPanel implements Runnable {
     }
 
     /**
-     * Megállítja a szimulációt és egy felugró ablakban kiválasztott fájlba elmenti annak jelenlegi állapotát, szerializálással.
+     * Megállítja a szimulációt és egy felugró ablakban kiválasztott fájlba elmenti annak jelenlegi állapotát,
+     * szerializálással.
      */
     private void save() {
         stopGame();
