@@ -77,6 +77,11 @@ public class GameAreaPanel extends JPanel {
     public int getCellSize(){
         return cellSize;
     }
+
+    public void clearLivingSpace(){
+        livingSpace.killAll();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -113,6 +118,10 @@ public class GameAreaPanel extends JPanel {
                 g2d.drawLine(j * cellSize, 0, j * cellSize, rows * cellSize); // Függőleges vonalak
             }
         }
+    }
+
+    public void livingSpaceResize(int newSize){
+        livingSpace.resize(newSize);
     }
 
     @Override

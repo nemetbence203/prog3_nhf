@@ -103,6 +103,32 @@ public class LivingSpace implements Serializable {
         return count;
     }
 
+    public void resize(int newSize) {
+        if (newSize < 1) {
+            throw new IllegalArgumentException("The size must be at least 1.");
+        }
+
+        ArrayList<ArrayList<Cell>> newCells = new ArrayList<>();
+
+        for (int i = 0; i < newSize; i++) {
+            ArrayList<Cell> row = new ArrayList<>();
+            for (int j = 0; j < newSize; j++) {
+                if (i < cells.size() && j < cells.get(i).size()) {
+                    // Másolja a meglévő cellát, ha az index még az eredeti mátrixon belül van
+                    row.add(cells.get(i).get(j));
+                } else {
+                    // Új cella inicializálása az új sorokba/oszlopokba
+                    row.add(new Cell());
+                }
+            }
+            newCells.add(row);
+        }
+
+        // Frissítsük az élettér méretét
+        this.cells = newCells;
+        this.size = newSize;
+    }
+
     public Cell getAt(int x, int y) {
         return cells.get(x).get(y);
     }

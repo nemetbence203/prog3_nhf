@@ -12,10 +12,13 @@ public class GameOfLife extends JFrame {
 
     public GameOfLife() {
 
-        livingSpace = new LivingSpace(100); // Default: egy 50x50-es élettér
+        livingSpace = new LivingSpace(50); // Default: egy 50x50-es élettér
         setTitle("Életjáték");
         setLayout(new BorderLayout());
         GameAreaPanel gameAreaPanel = new GameAreaPanel(livingSpace, 10);
+        gameAreaPanel.setPreferredSize(new Dimension(550,600));
+
+
         controlPanel = new GameControlPanel(livingSpace, gameAreaPanel);
         JScrollPane scrollPane = new JScrollPane(gameAreaPanel);
         add(scrollPane, BorderLayout.CENTER);

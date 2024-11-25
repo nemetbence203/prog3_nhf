@@ -40,6 +40,13 @@ public class GameControlPanel extends JPanel implements Runnable {
         sizeSpinner = new JSpinner(new SpinnerNumberModel(50,10,150,1));
         sizeSettingPanel.add(sizeSpinner);
         add(sizeSettingPanel);
+        sizeSpinner.addChangeListener(e -> {
+            int newSize = (int) sizeSpinner.getValue();
+            if (newSize != livingSpace.getSize()) {
+                gameAreaPanel.livingSpaceResize(newSize);
+                gameAreaPanel.repaint();
+            }
+        });
 
         // 2. Játékszabályok
         JPanel rulesPanel = new JPanel();
@@ -145,7 +152,7 @@ public class GameControlPanel extends JPanel implements Runnable {
         stopButton.addActionListener(e -> stopGame());
 
         clearButton.addActionListener(e -> {
-            livingSpace.killAll();
+            gameAreaPanel.clearLivingSpace();
             gameAreaPanel.repaint();
         });
 
@@ -254,6 +261,7 @@ public class GameControlPanel extends JPanel implements Runnable {
                 ruleSetter();
                 gameAreaPanel.setLivingSpace(livingSpace);
                 gameAreaPanel.repaint(); // Frissíti a játékterületet
+                sizeSpinner.setValue(livingSpace.getSize());
 
                 JOptionPane.showMessageDialog(null,
                         "Sikeresen betöltve: " + selectedFile.getAbsolutePath(),
