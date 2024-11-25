@@ -27,10 +27,7 @@ public class GameAreaPanel extends JPanel {
         this.cellSize = initcellSize;
 
         addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                toggleCell(e);
-            }
+
             @Override
             public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
@@ -144,10 +141,7 @@ public class GameAreaPanel extends JPanel {
             this.removeMouseListener(ml);
         }
         addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                toggleCell(e);
-            }
+
             @Override
             public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
