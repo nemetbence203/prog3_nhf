@@ -164,7 +164,7 @@ public class GameAreaPanel extends JPanel {
             for (int j = 0; j < cols; j++) {
                 Cell current = livingSpace.getAt(i, j);
                 if(isFadeOn){
-                    g2d.setColor(fadeColor(livingColor, current.deadSince()));
+                    g2d.setColor(fadeColor(livingColor, current.getDeadSince()));
                 }else {
                     if(current.isAlive()){
                         g2d.setColor(livingColor);

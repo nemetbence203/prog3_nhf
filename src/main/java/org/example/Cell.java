@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Szerializálható interfészt megvalósító Cell vagy sejt osztály
  */
 public class Cell implements Serializable{
-    private boolean isalive; ///< Cella állapota, false ha halott, true ha él
+    private boolean isalive;///< Cella állapota, false ha halott, true ha él
     private int deadSince; ///< Cella halála óta eltelt generációk, a fade effekthez kell
     private static final int MAX_DEAD_SINCE = 17; ///< Konstans, a deadSince max értéke
     /**
@@ -25,6 +25,7 @@ public class Cell implements Serializable{
         this.isalive = c.isalive;
         this.deadSince = c.deadSince;
     }
+
 
     /**
      * @return a cella állapota
@@ -85,5 +86,5 @@ public class Cell implements Serializable{
      * Visszaadja a deadSince értékét
      * @return deadSince értéke
      */
-    public int deadSince() { return deadSince; }
+    public int getDeadSince() { return deadSince; }
 }
