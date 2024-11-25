@@ -2,20 +2,25 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
+/**
+ * A program fő osztálya
+ */
 public class GameOfLife extends JFrame {
 
-    private LivingSpace livingSpace;
-    private GameControlPanel controlPanel;
+    private LivingSpace livingSpace; ///< A futáshoz tartozó élettér
+    private GameControlPanel controlPanel; ///< A futáshoz tartozó GameControlPanel
+    private GameAreaPanel gameAreaPanel; ///< A futáshoz tartozó GameAreaPanel
 
+    /**
+     * Konstruktor, beállít pár GUI elemet, egy alapértelmezetten 50x50-es életteret, valamint a livingSpace, controlPanel gameAreaPanel mezőket
+     */
     public GameOfLife() {
 
         livingSpace = new LivingSpace(50); // Default: egy 50x50-es élettér
         setTitle("Életjáték");
         setLayout(new BorderLayout());
-        GameAreaPanel gameAreaPanel = new GameAreaPanel(livingSpace, 10);
+        gameAreaPanel = new GameAreaPanel(livingSpace, 10);
         gameAreaPanel.setPreferredSize(new Dimension(550,600));
 
 
@@ -32,6 +37,10 @@ public class GameOfLife extends JFrame {
         setVisible(true);
     }
 
+    /**
+     * Main metódus, indítja a programot.
+     * @param args
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GameOfLife::new);
     }

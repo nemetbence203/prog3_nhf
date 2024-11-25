@@ -2,21 +2,27 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 
+/**
+ * JPanelből származtatott osztály, az élettér grafikus megjelenítése a szerepe
+ */
 public class GameAreaPanel extends JPanel {
-    private LivingSpace livingSpace;
-    private final int cellSize; // Egy cella mérete (pixel)
-    private Color livingColor;
-    private Color deadColor;
-    private boolean isFadeOn = false;
-    private boolean isGridOn = true;
+    private LivingSpace livingSpace; ///< A panelhoz tartozó élettér példány
+    private int cellSize; ///< Egy cella pixelben megadott mérete
+    private Color livingColor; ///< Élő cellák színe
+    private Color deadColor; ///< Halott cellák színe
+    private boolean isFadeOn = false; ///< Halott cellák fokozatos elhalványozásának engedélyezése
+    private boolean isGridOn = true; ///< Rács kirajzolásának engedélyezése
 
-    public GameAreaPanel(LivingSpace livingSpace, int cellSize) {
+    /**
+     * GameAreaPanel konstruktora. Beállítja az eventlistenereket az egérműveletekhez (Kattintással rajzolás, görgetéssel zoom)
+     * @param livingSpace A panelhez tartozó élettér példány
+     * @param initcellSize A kezdeti cellaméret (zoom miatt később változhat)
+     */
+    public GameAreaPanel(LivingSpace livingSpace, int initcellSize) {
         this.livingSpace = livingSpace;
-        this.cellSize = cellSize;
+        this.cellSize = initcellSize;
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -29,33 +35,72 @@ public class GameAreaPanel extends JPanel {
                 }
             }
         });
+        addMouseWheelListener(e -> {
+            int rotation = e.getWheelRotation();
+            if (rotation < 0) {
+                // Görgő felfelé: nagyítás
+                cellSize = Math.min(cellSize + 2, 50); // Maximum cellaméret
+            } else {
+                // Görgő lefelé: kicsinyítés
+                cellSize = Math.max(cellSize - 2, 10);  // Minimum cellaméret
+            }
+            revalidate(); // Méret frissítése
+            repaint();    // Újrarajzolás
+        });
     }
 
+    /**
+     * Lépteti a panelhez tartozó életteret, majd frissíti a panel megjelenését.
+     */
     public void nextState(){
         livingSpace.nextState();
         repaint();
     }
 
+    /**
+     * @return boolean, be van-e kapcsolva az elhalványodás effekt
+     */
     public boolean isFadeOn() {
         return isFadeOn;
     }
 
+    /**
+     * @return boolean, be van-e kapcsolva a rács kirajzolása
+     */
     public boolean isGridOn() {
         return isGridOn;
     }
 
+    /**
+     * Beállítja az elhalványodás effekt engedélyezését
+     * @param fadeOn effekt állapota
+     */
     public void setFadeOn(boolean fadeOn) {
         this.isFadeOn = fadeOn;
     }
 
+    /**
+     * Beállítja a rács kirajzolásának engedélyezését
+     * @param gridOn rácsrajzolás állapota
+     */
     public void setGridOn(boolean gridOn) {
         isGridOn = gridOn;
     }
 
+    /**
+     * Beállítja a cellák színeit
+     * @param livingColor élő cellák színe
+     * @param deadColor halott cellák színe
+     */
     public void setColors(Color livingColor, Color deadColor) {
         this.livingColor = livingColor;
         this.deadColor = deadColor;
     }
+
+    /**
+     * Frissíti a referenciát a paraméterként megadott új élettérre, és frissíti a hozzá tartozó eventlistenereket
+     * @param livingSpace új élettér referenciája
+     */
     public void setLivingSpace(LivingSpace livingSpace) {
         this.livingSpace = livingSpace;
         for(MouseListener ml : this.getMouseListeners() ){
@@ -72,74 +117,104 @@ public class GameAreaPanel extends JPanel {
                 }
             }
         });
+        for(MouseWheelListener mwl : this.getMouseWheelListeners() ){
+            this.removeMouseWheelListener(mwl);
+        }
+        addMouseWheelListener(e -> {
+            int rotation = e.getWheelRotation();
+            if (rotation < 0) {
+                cellSize = Math.min(cellSize + 5, 50); // Maximum cellaméret
+            } else {
+                cellSize = Math.max(cellSize - 5, 5);  // Minimum cellaméret
+            }
+            revalidate();
+            repaint();
+        });
         repaint();
     }
+
+    /**
+     * Visszaadja az aktuális cellaméretet
+     * @return cellaméret
+     */
     public int getCellSize(){
         return cellSize;
     }
 
+    /**
+     * Megöli a panelhez tartozó élettér összes celláját
+     */
     public void clearLivingSpace(){
         livingSpace.killAll();
     }
 
+    /**
+     * Kirajzolja az élettér jelenlegi állapotát a beállított grid és fade változókat figyelembe véve
+     * @param g egy Graphics példány ami a rajzolást végzi
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
         int rows = livingSpace.getSize();
         int cols = livingSpace.getSize();
-
-
-        // Cellák rajzolása
+        g2d.setColor(deadColor);
+        g2d.fillRect(0, 0, cols * cellSize, rows * cellSize);
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 Cell current = livingSpace.getAt(i, j);
-                if (current.isAlive()) {
-                    g2d.setColor(livingColor); // Élő cellák színe
-                    g2d.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
-                }else{
-                    if(isFadeOn && current.deadSince() > 0 && current.deadSince() <= 5){
-                        g2d.setColor(interpolateColor(livingColor, deadColor, current.deadSince()));
-                        /// TODO valami itt elbaszódik
-                    }else {
+                if(isFadeOn){
+                    g2d.setColor(fadeColor(livingColor, current.deadSince()));
+                }else {
+                    if(current.isAlive()){
+                        g2d.setColor(livingColor);
+                    }else{
                         g2d.setColor(deadColor);
                     }
-                    g2d.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
                 }
+                g2d.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
             }
         }
-        g2d.setColor(Color.LIGHT_GRAY); // Rács színe
-        // Rácsvonalak rajzolása
         if(isGridOn) {
+            g2d.setColor(Color.LIGHT_GRAY);
             for (int i = 0; i <= rows; i++) {
-                g2d.drawLine(0, i * cellSize, cols * cellSize, i * cellSize); // Vízszintes vonalak
+                g2d.drawLine(0, i * cellSize, cols * cellSize, i * cellSize);
             }
             for (int j = 0; j <= cols; j++) {
-                g2d.drawLine(j * cellSize, 0, j * cellSize, rows * cellSize); // Függőleges vonalak
+                g2d.drawLine(j * cellSize, 0, j * cellSize, rows * cellSize);
             }
         }
     }
 
+    /**
+     * Átméretezi a panelhez tartozó életteret
+     * @param newSize új méret
+     */
     public void livingSpaceResize(int newSize){
         livingSpace.resize(newSize);
     }
 
+    /**
+     * Beállítja a panel méretét az élettér és a cellaméret szerint
+     * @return Dimension példány a számított méretekkel
+     */
     @Override
     public Dimension getPreferredSize() {
-        // A panel méretének beállítása az élettér mérete alapján
         return new Dimension(livingSpace.getSize() * cellSize, livingSpace.getSize() * cellSize);
     }
 
-    public static Color interpolateColor(Color livingColor, Color deadColor, int deadSince) {
-        // deadSince értékének arányosítása 0 és 1 között
-        float t = Math.clamp(deadSince / 5.0f, 0, 1);
-        // Színek RGB komponenseinek interpolációja
-        int red = (int) (livingColor.getRed() * (1 - t) + deadColor.getRed() * t);
-        int green = (int) (livingColor.getGreen() * (1 - t) + deadColor.getGreen() * t);
-        int blue = (int) (livingColor.getBlue() * (1 - t) + deadColor.getBlue() * t);
-
-        // Interpolált szín visszaadása
-        return new Color(red, green, blue);
+    /**
+     * Egy szín elhalványodását megoldó segédfüggvény
+     * @param baseColor módosítani kívánt szín
+     * @param deadSince fade mértéke, 0 és 5 között
+     * @return kívánt mértékben elhalványított szín
+     */
+    public static Color fadeColor(Color baseColor, int deadSince) {
+        if (deadSince < 0 || deadSince > 17) {
+            throw new IllegalArgumentException("deadSince értékének 0 és 5 között kell lennie.");
+        }
+        int alpha = (int) ((1.0 - (deadSince / 17.0)) * 255);
+        return new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), alpha);
     }
 }
 

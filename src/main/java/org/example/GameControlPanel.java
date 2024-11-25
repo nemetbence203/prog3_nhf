@@ -2,7 +2,6 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +9,9 @@ import javax.swing.border.LineBorder;
 
 import static javax.swing.SwingConstants.HORIZONTAL;
 
+/**
+ * A játék vezérlését végző menü osztálya, JPanelből leszármazva és a Runnable interfészt implementálja
+ */
 public class GameControlPanel extends JPanel implements Runnable {
     private JSlider speedSlider;
     private JCheckBox fadeEffectCheckbox, gridToggleCheckbox;
@@ -17,11 +19,16 @@ public class GameControlPanel extends JPanel implements Runnable {
     private JButton startButton, stopButton, clearButton, stepButton, colorPickerLiving, colorPickerDead, saveButton, loadButton;
     private LivingSpace livingSpace;
     private JSpinner sizeSpinner;
-    private Color livingColor = Color.blue;
-    private Color deadColor = Color.white;
-    private GameAreaPanel gameAreaPanel;
+    private Color livingColor = Color.blue; ///< Alapértelmezetten kékek az élő cellák
+    private Color deadColor = Color.white; ///< Alapértelmezetten fehérek a halott cellák
+    private GameAreaPanel gameAreaPanel; ///< A vezérelt GameAreaPanel példány
     private boolean running = false;
 
+    /**
+     * Konstruktor, beállítja a GUI elemeit, a hozzájuk tartozó eventlistenereket, valamint a paraméterben átvett GameAreaPanel és LivingSpace példányokat
+     * @param livingSpace vezérelt élettér
+     * @param gameAreaPanel vezérelt GameAreaPanel amihez az élettér is tartozik
+     */
     public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel) {
         this.livingSpace = livingSpace;
         this.gameAreaPanel = gameAreaPanel;
@@ -73,7 +80,7 @@ public class GameControlPanel extends JPanel implements Runnable {
         speedPanel.setPreferredSize(new Dimension(250, 80));
         speedPanel.setMaximumSize(new Dimension(250, 80));
         speedPanel.add(new JLabel("Játék sebessége"));
-        speedSlider = new JSlider(HORIZONTAL, 1, 10, 5); // Sebesség 1-10 között, alapértelmezett 5
+        speedSlider = new JSlider(HORIZONTAL, 1, 10, 10);
         speedSlider.setMajorTickSpacing(1);
         speedSlider.setPaintTicks(true);
         speedSlider.setPaintLabels(true);
@@ -95,7 +102,6 @@ public class GameControlPanel extends JPanel implements Runnable {
         });
 
         // 5. Rácsok ki és bekapcsolása
-
         JPanel gridTogglePanel = new JPanel();
         gridTogglePanel.setPreferredSize(new Dimension(250, 40));
         gridTogglePanel.setMaximumSize(new Dimension(250, 40));
@@ -186,6 +192,10 @@ public class GameControlPanel extends JPanel implements Runnable {
 
     }
 
+    /**
+     * Szimuláció folyamatos futását implementáló függvény. Sebessége a speedSlider értékének függvénye,
+     * amit folyamatosan lekér
+     */
     @Override
     public void run() {
         while(running) {
@@ -197,6 +207,8 @@ public class GameControlPanel extends JPanel implements Runnable {
                     e.printStackTrace();
                 } catch (NumberFormatException e) {
                     stopGame();
+                    bornField.setText("3");
+                    surviveField.setText("2,3");
                     JOptionPane.showMessageDialog(this, "Szabályok formátuma: számjegyek 0-tól 8-ig, vesszővel elválasztva!", "Hiba", JOptionPane.ERROR_MESSAGE);
                 }
                 gameAreaPanel.nextState();
@@ -205,25 +217,27 @@ public class GameControlPanel extends JPanel implements Runnable {
         }
     }
 
+    /**
+     * Megállítja a szimulációt és egy felugró ablakban kiválasztott fájlba elmenti annak jelenlegi állapotát, szerializálással.
+     */
     private void save() {
-        stopGame(); // Megállítja a játékot, hogy az állapot konzisztense maradjon
+        stopGame();
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
         fileChooser.setDialogTitle("Válassz helyet az élettér mentéséhez");
 
-        int result = fileChooser.showSaveDialog(null); // Mentési ablak megjelenítése
+        int result = fileChooser.showSaveDialog(null);
 
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
 
-            // Ellenőrizzük, hogy van-e kiterjesztés, ha nincs, hozzáadjuk
             if (!selectedFile.getName().endsWith(".dat")) {
                 selectedFile = new File(selectedFile.getAbsolutePath() + ".dat");
             }
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(selectedFile))) {
-                oos.writeObject(livingSpace); // Az élettér szerializálása a fájlba
+                oos.writeObject(livingSpace);
                 JOptionPane.showMessageDialog(null,
                         "Sikeresen elmentve: " + selectedFile.getAbsolutePath(),
                         "Mentés sikeres",
@@ -242,6 +256,10 @@ public class GameControlPanel extends JPanel implements Runnable {
         }
     }
 
+    /**
+     * Megállítja a szimulációt, egy felugró ablakban kiválasztott .dat kiterjesztésű fájlból betölt egy abba
+     * szerializálva mentett élettér példányt, majd frissíti a szükséges referenciákat.
+     */
     private void load() {
         stopGame(); // Megállítja a játékot a betöltés előtt
 
@@ -249,14 +267,13 @@ public class GameControlPanel extends JPanel implements Runnable {
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
         fileChooser.setDialogTitle("Válassz fájlt az élettér betöltéséhez");
 
-        int result = fileChooser.showOpenDialog(null); // Fájl kiválasztása
+        int result = fileChooser.showOpenDialog(null);
 
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
 
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
 
-                // Frissítjük a jelenlegi életteret
                 livingSpace = (LivingSpace) ois.readObject();
                 ruleSetter();
                 gameAreaPanel.setLivingSpace(livingSpace);
@@ -281,6 +298,9 @@ public class GameControlPanel extends JPanel implements Runnable {
         }
     }
 
+    /**
+     * Beállítja az szimuláciü szabályait a két vonatkozó szövegmező tartalma szerint
+     */
     private void ruleSetter() {
         List<Integer> bornRules = parseRules(bornField.getText());
         List<Integer> surviveRules = parseRules(surviveField.getText());
@@ -288,7 +308,9 @@ public class GameControlPanel extends JPanel implements Runnable {
         livingSpace.setSurviveRule(surviveRules);
     }
 
-    // Játék indítása
+    /**
+     * Elindít egy szálat a szimuláció folyamatos futásához
+     */
     private void startGame() {
         if(running) return;
         running = true;
@@ -297,18 +319,33 @@ public class GameControlPanel extends JPanel implements Runnable {
     }
 
 
-    // Játék megállítása
+    /**
+     * Megállítja a szimulációt, a hozzá tartozó szálat interruptolja
+     */
     private void stopGame() {
         running = false;
         Thread.currentThread().interrupt();
     }
 
-    // Segédmetódus a szabályok parse-olásához
-    private List<Integer> parseRules(String rulesText) {
+    /**
+     * Segédmetódus a szabálymező parseolásához. Szigorúan csak "0,1,2,3..." formátumban fogadja el a szabályokat
+     * Ha parseoláskor hiba lép fel, az alapételmezett Conway-féle szabályokat állítja be (B3/S23)
+     * @param rulesText String ami a szabályokat tartalmazza
+     * @return List a rulesTextből kiválogatott Integerekből
+     * @throws NumberFormatException ha sikertelen a parseolás
+     */
+    private List<Integer> parseRules(String rulesText) throws NumberFormatException{
         String[] ruleStrings = rulesText.split(",");
         List<Integer> rules = new ArrayList<>();
         for (String rule : ruleStrings) {
-            rules.add(Integer.parseInt(rule.trim()));
+            int newRule = Integer.parseInt(rule.trim());
+            if(0<= newRule && newRule <= 8) {
+                rules.add(newRule);
+            }else{
+                bornField.setText("3");
+                surviveField.setText("2,3");
+                JOptionPane.showMessageDialog(this, "Szabályok formátuma: számjegyek 0-tól 8-ig, vesszővel elválasztva!", "Hiba", JOptionPane.ERROR_MESSAGE);
+            }
         }
         return rules;
     }
