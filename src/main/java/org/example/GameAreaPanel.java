@@ -2,38 +2,85 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 public class GameAreaPanel extends JPanel {
-    private final LivingSpace livingSpace;
+    private LivingSpace livingSpace;
     private final int cellSize; // Egy cella mérete (pixel)
-    private Color livingColor = Color.blue;
-    private Color deadColor = Color.white;
+    private Color livingColor;
+    private Color deadColor;
     private boolean isFadeOn = false;
+    private boolean isGridOn = true;
 
     public GameAreaPanel(LivingSpace livingSpace, int cellSize) {
         this.livingSpace = livingSpace;
         this.cellSize = cellSize;
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = e.getY() / cellSize;
+                int col = e.getX() / cellSize;
+                if (row < livingSpace.getSize() && col < livingSpace.getSize()) {
+                    livingSpace.getAt(row, col).flip();
+                    repaint();
+                }
+            }
+        });
+    }
+
+    public void nextState(){
+        livingSpace.nextState();
+        repaint();
+    }
+
+    public boolean isFadeOn() {
+        return isFadeOn;
+    }
+
+    public boolean isGridOn() {
+        return isGridOn;
     }
 
     public void setFadeOn(boolean fadeOn) {
         this.isFadeOn = fadeOn;
     }
 
+    public void setGridOn(boolean gridOn) {
+        isGridOn = gridOn;
+    }
+
     public void setColors(Color livingColor, Color deadColor) {
         this.livingColor = livingColor;
         this.deadColor = deadColor;
     }
-
+    public void setLivingSpace(LivingSpace livingSpace) {
+        this.livingSpace = livingSpace;
+        for(MouseListener ml : this.getMouseListeners() ){
+            this.removeMouseListener(ml);
+        }
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = e.getY() / cellSize;
+                int col = e.getX() / cellSize;
+                if (row < livingSpace.getSize() && col < livingSpace.getSize()) {
+                    livingSpace.getAt(row, col).flip();
+                    repaint();
+                }
+            }
+        });
+        repaint();
+    }
     public int getCellSize(){
         return cellSize;
     }
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         Graphics2D g2d = (Graphics2D) g;
-
-
         int rows = livingSpace.getSize();
         int cols = livingSpace.getSize();
 
@@ -58,11 +105,13 @@ public class GameAreaPanel extends JPanel {
         }
         g2d.setColor(Color.LIGHT_GRAY); // Rács színe
         // Rácsvonalak rajzolása
-        for (int i = 0; i <= rows; i++) {
-            g2d.drawLine(0, i * cellSize, cols * cellSize, i * cellSize); // Vízszintes vonalak
-        }
-        for (int j = 0; j <= cols; j++) {
-            g2d.drawLine(j * cellSize, 0, j * cellSize, rows * cellSize); // Függőleges vonalak
+        if(isGridOn) {
+            for (int i = 0; i <= rows; i++) {
+                g2d.drawLine(0, i * cellSize, cols * cellSize, i * cellSize); // Vízszintes vonalak
+            }
+            for (int j = 0; j <= cols; j++) {
+                g2d.drawLine(j * cellSize, 0, j * cellSize, rows * cellSize); // Függőleges vonalak
+            }
         }
     }
 
@@ -74,8 +123,7 @@ public class GameAreaPanel extends JPanel {
 
     public static Color interpolateColor(Color livingColor, Color deadColor, int deadSince) {
         // deadSince értékének arányosítása 0 és 1 között
-        float t = Math.min(Math.max(deadSince / 5.0f, 0), 1);
-
+        float t = Math.clamp(deadSince / 5.0f, 0, 1);
         // Színek RGB komponenseinek interpolációja
         int red = (int) (livingColor.getRed() * (1 - t) + deadColor.getRed() * t);
         int green = (int) (livingColor.getGreen() * (1 - t) + deadColor.getGreen() * t);
@@ -84,8 +132,5 @@ public class GameAreaPanel extends JPanel {
         // Interpolált szín visszaadása
         return new Color(red, green, blue);
     }
-
-
-
 }
 
