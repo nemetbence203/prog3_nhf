@@ -16,7 +16,7 @@ public class GameControlPanel extends JPanel implements Runnable {
     private JSlider speedSlider;
     private JCheckBox fadeEffectCheckbox, gridToggleCheckbox;
     private JTextField bornField, surviveField;
-    private JButton startButton, stopButton, clearButton, stepButton, colorPickerLiving, colorPickerDead, saveButton, loadButton;
+    private JButton startButton, stopButton, clearButton, stepButton, colorPickerLiving, colorPickerDead;
     private LivingSpace livingSpace;
     private JSpinner sizeSpinner;
     private Color livingColor = Color.blue; ///< Alapértelmezetten kékek az élő cellák
@@ -29,13 +29,25 @@ public class GameControlPanel extends JPanel implements Runnable {
      * @param livingSpace vezérelt élettér
      * @param gameAreaPanel vezérelt GameAreaPanel amihez az élettér is tartozik
      */
-    public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel) {
+    public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel, JMenuBar menuBar) {
         this.livingSpace = livingSpace;
         this.gameAreaPanel = gameAreaPanel;
         gameAreaPanel.setColors(livingColor, deadColor);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(new LineBorder(Color.black, 1));
         setPreferredSize(new Dimension(250, 600)); // Panel szélessége és magassága
+
+        //0. menübar elemek
+        JMenu fileMenu = new JMenu("Fájl");
+        JMenuItem saveMenuItem = new JMenuItem("Mentés");
+        saveMenuItem.addActionListener(e -> save());
+        fileMenu.add(saveMenuItem);
+
+        JMenuItem loadMenuItem = new JMenuItem("Betöltés");
+        loadMenuItem.addActionListener(e -> load());
+        fileMenu.add(loadMenuItem);
+
+        menuBar.add(fileMenu);
 
         //1. Élettér mérete:
         JPanel sizeSettingPanel = new JPanel();
@@ -174,22 +186,6 @@ public class GameControlPanel extends JPanel implements Runnable {
         startStopPanel.add(clearButton);
         startStopPanel.add(stepButton);
         add(startStopPanel);
-
-        // 8. Újabb gombok: Mentés és betöltés:
-        JPanel saveLoadPanel = new JPanel();
-        saveLoadPanel.setPreferredSize(new Dimension(250, 50));
-        saveLoadPanel.setMaximumSize(new Dimension(250, 50));
-        saveLoadPanel.setBorder(new LineBorder(Color.black, 1));
-        saveLoadPanel.setLayout(new GridLayout(1,2));
-        saveButton = new JButton("Mentés");
-        loadButton = new JButton("Betöltés");
-        saveLoadPanel.add(saveButton);
-        saveLoadPanel.add(loadButton);
-        add(saveLoadPanel);
-        saveButton.addActionListener(e -> save());
-        loadButton.addActionListener(e -> load());
-
-
     }
 
     /**
