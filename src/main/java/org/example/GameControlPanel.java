@@ -16,7 +16,7 @@ public class GameControlPanel extends JPanel implements Runnable {
     private JSlider speedSlider;
     private JCheckBox fadeEffectCheckbox, gridToggleCheckbox;
     private JTextField bornField, surviveField;
-    private JButton startButton, stopButton, clearButton, stepButton, colorPickerLiving, colorPickerDead, saveButton, loadButton;
+    private JButton startButton, stopButton, clearButton, stepButton, colorPickerLiving, colorPickerDead;
     private LivingSpace livingSpace;
     private JSpinner sizeSpinner;
     private Color livingColor = Color.blue; ///< Alapértelmezetten kékek az élő cellák
@@ -29,13 +29,25 @@ public class GameControlPanel extends JPanel implements Runnable {
      * @param livingSpace vezérelt élettér
      * @param gameAreaPanel vezérelt GameAreaPanel amihez az élettér is tartozik
      */
-    public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel) {
+    public GameControlPanel(LivingSpace livingSpace, GameAreaPanel gameAreaPanel, JMenuBar menuBar) {
         this.livingSpace = livingSpace;
         this.gameAreaPanel = gameAreaPanel;
         gameAreaPanel.setColors(livingColor, deadColor);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(new LineBorder(Color.black, 1));
         setPreferredSize(new Dimension(250, 600)); // Panel szélessége és magassága
+
+        //0. menübar elemek
+        JMenu fileMenu = new JMenu("Fájl");
+        JMenuItem saveMenuItem = new JMenuItem("Mentés");
+        saveMenuItem.addActionListener(e -> save());
+        fileMenu.add(saveMenuItem);
+
+        JMenuItem loadMenuItem = new JMenuItem("Betöltés");
+        loadMenuItem.addActionListener(e -> load());
+        fileMenu.add(loadMenuItem);
+
+        menuBar.add(fileMenu);
 
         //1. Élettér mérete:
         JPanel sizeSettingPanel = new JPanel();
@@ -174,22 +186,6 @@ public class GameControlPanel extends JPanel implements Runnable {
         startStopPanel.add(clearButton);
         startStopPanel.add(stepButton);
         add(startStopPanel);
-
-        // 8. Újabb gombok: Mentés és betöltés:
-        JPanel saveLoadPanel = new JPanel();
-        saveLoadPanel.setPreferredSize(new Dimension(250, 50));
-        saveLoadPanel.setMaximumSize(new Dimension(250, 50));
-        saveLoadPanel.setBorder(new LineBorder(Color.black, 1));
-        saveLoadPanel.setLayout(new GridLayout(1,2));
-        saveButton = new JButton("Mentés");
-        loadButton = new JButton("Betöltés");
-        saveLoadPanel.add(saveButton);
-        saveLoadPanel.add(loadButton);
-        add(saveLoadPanel);
-        saveButton.addActionListener(e -> save());
-        loadButton.addActionListener(e -> load());
-
-
     }
 
     /**
@@ -218,42 +214,44 @@ public class GameControlPanel extends JPanel implements Runnable {
     }
 
     /**
-     * Megállítja a szimulációt és egy felugró ablakban kiválasztott fájlba elmenti annak jelenlegi állapotát, szerializálással.
+     * Megállítja a szimulációt és egy felugró ablakban kiválasztott fájlba elmenti annak jelenlegi állapotát,
+     * szerializálással.
      */
     private void save() {
         stopGame();
+        SwingUtilities.invokeLater(()-> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+            fileChooser.setDialogTitle("Válassz helyet az élettér mentéséhez");
 
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-        fileChooser.setDialogTitle("Válassz helyet az élettér mentéséhez");
+            int result = fileChooser.showSaveDialog(this);
 
-        int result = fileChooser.showSaveDialog(null);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
 
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
+                if (!selectedFile.getName().endsWith(".dat")) {
+                    selectedFile = new File(selectedFile.getAbsolutePath() + ".dat");
+                }
 
-            if (!selectedFile.getName().endsWith(".dat")) {
-                selectedFile = new File(selectedFile.getAbsolutePath() + ".dat");
-            }
-
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(selectedFile))) {
-                oos.writeObject(livingSpace);
+                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(selectedFile))) {
+                    oos.writeObject(livingSpace);
+                    JOptionPane.showMessageDialog(null,
+                            "Sikeresen elmentve: " + selectedFile.getAbsolutePath(),
+                            "Mentés sikeres",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null,
+                            "Hiba történt a mentés során: " + e.getMessage(),
+                            "Mentési hiba",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
                 JOptionPane.showMessageDialog(null,
-                        "Sikeresen elmentve: " + selectedFile.getAbsolutePath(),
-                        "Mentés sikeres",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null,
-                        "Hiba történt a mentés során: " + e.getMessage(),
-                        "Mentési hiba",
-                        JOptionPane.ERROR_MESSAGE);
+                        "Mentési művelet megszakítva!",
+                        "Művelet megszakítva",
+                        JOptionPane.WARNING_MESSAGE);
             }
-        } else {
-            JOptionPane.showMessageDialog(null,
-                    "Mentési művelet megszakítva!",
-                    "Művelet megszakítva",
-                    JOptionPane.WARNING_MESSAGE);
-        }
+        });
     }
 
     /**
@@ -262,40 +260,41 @@ public class GameControlPanel extends JPanel implements Runnable {
      */
     private void load() {
         stopGame(); // Megállítja a játékot a betöltés előtt
+        SwingUtilities.invokeLater(()-> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+            fileChooser.setDialogTitle("Válassz fájlt az élettér betöltéséhez");
 
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-        fileChooser.setDialogTitle("Válassz fájlt az élettér betöltéséhez");
+            int result = fileChooser.showOpenDialog(this);
 
-        int result = fileChooser.showOpenDialog(null);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
 
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
 
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
+                    livingSpace = (LivingSpace) ois.readObject();
+                    ruleSetter();
+                    gameAreaPanel.setLivingSpace(livingSpace);
+                    gameAreaPanel.repaint(); // Frissíti a játékterületet
+                    sizeSpinner.setValue(livingSpace.getSize());
 
-                livingSpace = (LivingSpace) ois.readObject();
-                ruleSetter();
-                gameAreaPanel.setLivingSpace(livingSpace);
-                gameAreaPanel.repaint(); // Frissíti a játékterületet
-                sizeSpinner.setValue(livingSpace.getSize());
-
+                    JOptionPane.showMessageDialog(null,
+                            "Sikeresen betöltve: " + selectedFile.getAbsolutePath(),
+                            "Betöltés sikeres",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null,
+                            "Hiba történt a betöltés során: " + e.getMessage(),
+                            "Betöltési hiba",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
                 JOptionPane.showMessageDialog(null,
-                        "Sikeresen betöltve: " + selectedFile.getAbsolutePath(),
-                        "Betöltés sikeres",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null,
-                        "Hiba történt a betöltés során: " + e.getMessage(),
-                        "Betöltési hiba",
-                        JOptionPane.ERROR_MESSAGE);
+                        "Betöltési művelet megszakítva!",
+                        "Művelet megszakítva",
+                        JOptionPane.WARNING_MESSAGE);
             }
-        } else {
-            JOptionPane.showMessageDialog(null,
-                    "Betöltési művelet megszakítva!",
-                    "Művelet megszakítva",
-                    JOptionPane.WARNING_MESSAGE);
-        }
+        });
     }
 
     /**

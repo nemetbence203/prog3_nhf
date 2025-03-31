@@ -53,6 +53,9 @@ public class Cell implements Serializable{
         deadSince = 1;
     }
 
+    /**
+     * Élettér clear-elésekor használt kill metódus, a deadSince értékét maxra állítja, a fade effekt miatt
+     */
     public void clearKill(){
         isalive = false;
         deadSince = MAX_DEAD_SINCE;

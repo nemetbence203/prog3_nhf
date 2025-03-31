@@ -23,15 +23,15 @@ public class GameOfLife extends JFrame {
         gameAreaPanel = new GameAreaPanel(livingSpace, 10);
         gameAreaPanel.setPreferredSize(new Dimension(550,600));
 
-
-        controlPanel = new GameControlPanel(livingSpace, gameAreaPanel);
+        JMenuBar menuBar = new JMenuBar();
+        controlPanel = new GameControlPanel(livingSpace, gameAreaPanel, menuBar);
         JScrollPane scrollPane = new JScrollPane(gameAreaPanel);
         add(scrollPane, BorderLayout.CENTER);
 
 
 
         add(controlPanel, BorderLayout.EAST); // Menüsáv hozzáadása
-
+        setJMenuBar(menuBar);
         setSize(800, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);

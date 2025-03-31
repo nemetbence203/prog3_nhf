@@ -14,6 +14,8 @@ public class GameAreaPanel extends JPanel {
     private Color deadColor; ///< Halott cellák színe
     private boolean isFadeOn = false; ///< Halott cellák fokozatos elhalványozásának engedélyezése
     private boolean isGridOn = true; ///< Rács kirajzolásának engedélyezése
+    private int lastRow = -1, lastCol = -1; ///< Utoljára rajzolt sor és oszlop
+    private boolean isDrawing = false;
 
     /**
      * GameAreaPanel konstruktora. Beállítja az eventlistenereket az egérműveletekhez (Kattintással rajzolás, görgetéssel zoom)
@@ -25,13 +27,21 @@ public class GameAreaPanel extends JPanel {
         this.cellSize = initcellSize;
 
         addMouseListener(new MouseAdapter() {
+
             @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = e.getY() / cellSize;
-                int col = e.getX() / cellSize;
-                if (row < livingSpace.getSize() && col < livingSpace.getSize()) {
-                    livingSpace.getAt(row, col).flip();
-                    repaint();
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    isDrawing = true;
+                    toggleCell(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    isDrawing = false;
+                    lastRow = -1; // Reset az utolsó cellára
+                    lastCol = -1;
                 }
             }
         });
@@ -47,6 +57,30 @@ public class GameAreaPanel extends JPanel {
             revalidate(); // Méret frissítése
             repaint();    // Újrarajzolás
         });
+
+        // Egérmozgás figyelése
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (isDrawing) {
+                    toggleCell(e);
+                }
+            }
+        });
+    }
+
+    private void toggleCell(MouseEvent e) {
+        int row = e.getY() / cellSize;
+        int col = e.getX() / cellSize;
+
+        if (row >= 0 && col >= 0 && row < livingSpace.getSize() && col < livingSpace.getSize()) {
+            if (row != lastRow || col != lastCol) {
+                livingSpace.getAt(row, col).flip();
+                lastRow = row;
+                lastCol = col;
+                repaint();
+            }
+        }
     }
 
     /**
@@ -107,13 +141,20 @@ public class GameAreaPanel extends JPanel {
             this.removeMouseListener(ml);
         }
         addMouseListener(new MouseAdapter() {
+
             @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = e.getY() / cellSize;
-                int col = e.getX() / cellSize;
-                if (row < livingSpace.getSize() && col < livingSpace.getSize()) {
-                    livingSpace.getAt(row, col).flip();
-                    repaint();
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    isDrawing = true;
+                    toggleCell(e);
+                }
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    isDrawing = false;
+                    lastRow = -1; // Reset az utolsó cellára
+                    lastCol = -1;
                 }
             }
         });
@@ -216,5 +257,6 @@ public class GameAreaPanel extends JPanel {
         int alpha = (int) ((1.0 - (deadSince / 17.0)) * 255);
         return new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), alpha);
     }
+
 }
 
